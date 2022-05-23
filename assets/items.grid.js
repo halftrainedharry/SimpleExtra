@@ -10,6 +10,8 @@ SimpleExtra.grid.Items = function(config) {
         autoHeight: true,
         paging: true,
         remoteSort: true,
+        save_action: 'SimpleExtra\\Processors\\Item\\UpdateFromGrid',
+        autosave: true,
         columns: [
             {
                 header: 'ID',
@@ -19,12 +21,14 @@ SimpleExtra.grid.Items = function(config) {
             {
                 header: 'Name',
                 dataIndex: 'name',
-                sortable: true
+                sortable: true,
+                editor: { xtype: 'textfield' }
             },
             {
                 header: 'Description',
                 dataIndex: 'description',
-                sortable: true
+                sortable: true,
+                editor: { xtype: 'textfield' }
             }
         ],
         tbar: [{
@@ -59,8 +63,28 @@ Ext.extend(SimpleExtra.grid.Items, MODx.grid.Grid, {
         });
         win.show(e.target);
     },
+    updateItem: function(btn, e){
+        if (!this.menu.record || !this.menu.record.id){
+            return false;
+        }
+        var win = MODx.load({
+            xtype: 'simpleextra-window-item-create-update',
+            title: 'Update Item',
+            action: 'SimpleExtra\\Processors\\Item\\Update',
+            listeners: {
+                'success': {fn: function() { this.refresh(); }, scope: this}
+            }
+        });
+        win.fp.getForm().setValues(this.menu.record);
+        win.show(e.target);
+    },
     getMenu: function() {
         var m = [];
+        m.push({
+            text: 'Update Item',
+            handler: this.updateItem
+        });
+        m.push('-');
         m.push({
             text: 'Remove Item',
             handler: this.removeItem
@@ -108,6 +132,10 @@ SimpleExtra.window.CreateUpdateItem = function(config) {
                 fieldLabel: 'Description',
                 name: 'description',
                 anchor: '100%'
+            },
+            {
+                xtype: 'hidden',
+                name: 'id'
             }
         ]
     });
