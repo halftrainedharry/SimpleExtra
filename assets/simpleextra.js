@@ -42,6 +42,32 @@ SimpleExtra.panel.Home = function(config) {
                                 html: '<p>Manage your items</p>',
                                 bodyCssClass: 'panel-desc',
                                 border: false
+                            },
+                            {
+                                xtype: 'button',
+                                style: { marginLeft: '20px' },
+                                text: 'Run Processor',
+                                handler: function() {
+                                    MODx.Ajax.request({
+                                        url: MODx.config.connector_url,
+                                        params: {
+                                            action: 'SimpleExtra\\Processors\\Sample'
+                                        },
+                                        listeners: {
+                                            success: {
+                                                fn: function(res){
+                                                    Ext.Msg.alert('Done', res.message);
+                                                },
+                                                scope: this
+                                            }
+                                        }
+                                    });
+                                }
+                            },
+                            {
+                                xtype: 'simpleextra-grid-items',
+                                preventRender: true,
+                                cls: 'main-wrapper'
                             }
                         ]
                     }
