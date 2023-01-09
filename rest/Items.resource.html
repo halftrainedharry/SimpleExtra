@@ -1,0 +1,162 @@
+[[!Login]]
+<hr>
+Status: [[!+modx.user.id:isloggedin:is=`1`:then=`logged in`:else=`NOT logged in`]]<br>
+Username: [[!+modx.user.id:userinfo=`username`]]<br>
+<hr>
+<script defer src="https://unpkg.com/alpinejs@3.7.1/dist/cdn.min.js"></script>
+
+<div x-data="getAlpineData()" x-init="loadItems()">
+    <div style="color: red;" x-text="error_message" x-show="error_message != ''"></div>
+    <h2 x-text="'Items (Total: ' + total_items + ')'"></h2>
+    <button @click="loadItems()">Reload</button>
+
+    <button @click="addItem()">Add new item</button>
+    <form id="myform" @submit.prevent="saveItem()" x-show="isActiveEditItem" @click.outside="cancelItem()" style="background-color:#fff;position:fixed; transform: translate(-50%,-50%); width:300px; top: 50%;left: 50%; box-shadow: #444 5px 5px 15px; padding: 10px;">
+        <label for="item_name">Name</label><br>
+        <input x-ref="item_name" x-model="editedItem.name" name="name" id="item_name" required><br>
+        <label for="item_description">Description</label><br>
+        <textarea x-model="editedItem.description" name="description" rows="6" id="item_description"></textarea><br>
+        <input type="submit" value="Save">
+        <button @click.prevent="cancelItem()">Cancel</button>
+    </form>
+
+    <ul class="itemlist">
+        <template x-for="item in items" :key="item.id">
+            <li :id="'item' + item.id">
+                <h3 x-text="item.name + ' (ID: ' + item.id + ')'"></h3>
+                <div x-html="item.description"></div>
+                <div>
+                    <button @click="editItem(item.id)">edit</button>
+                    <button @click="deleteItem(item.id)">delete</button>
+                </div>
+            </li>
+        </template>
+    </ul>
+</div>
+<script>
+    function getAlpineData(){
+        const base_url = "http://mydomain.com/rest/";
+        return {
+            error_message: '',
+            items: [],
+            total_items: 0,
+            isActiveEditItem: false,
+            editedItem: {},
+            loadItems(){
+                this.error_message = '';
+                const error_message_start = "Querying items failed: ";
+                const items_url = base_url + "items";
+                fetch(items_url)
+                    .then(resp => {
+                        if (resp.ok && resp.status == 200){
+                            return resp.json();
+                        } else {
+                            this.error_message = error_message_start + `${resp.status} (${resp.statusText})`;
+                        }
+                    })
+                    .then(data => {
+                        if (data){
+                            if (data.results){
+                                this.items = data.results;
+                                this.total_items = data.total;
+                            } else {
+                                this.error_message = error_message_start + data.message;
+                            }
+                        }
+                    })
+                    .catch(err => {
+                        this.error_message = error_message_start + err;
+                    });
+            },
+            addItem(){
+                this.editedItem = {
+                    "id": 0,
+                    "name": "",
+                    "description": ""
+                };
+                this.$nextTick(() => this.$refs.item_name.focus());
+                this.isActiveEditItem = true;
+            },
+            editItem(id_item){
+                const current_item = this.items.find((item) => {
+                    return item.id == id_item;
+                });
+                if (current_item){
+                    //copy item
+                    this.editedItem = {
+                        ...current_item
+                    };
+                    this.$nextTick(() => this.$refs.item_name.focus());
+                    this.isActiveEditItem = true;
+                }
+            },
+            cancelItem(){
+                this.editedItem = {};
+                this.isActiveEditItem = false;
+            },
+            saveItem(){
+                this.error_message = '';
+                const error_message_start = "Saving item failed: ";
+                const item_url = base_url + "items";
+                const data = JSON.stringify(this.editedItem);
+                fetch(item_url, {
+                    method: (this.editedItem.id == 0) ? "POST" : "PUT",
+                    body: data,
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                })
+                    .then(resp => {
+                        if (resp.ok && resp.status == 200){
+                            return resp.json();
+                        } else {
+                            this.error_message = error_message_start + `${resp.status} (${resp.statusText})`;
+                        }
+                    })
+                    .then(data => {
+                        if (data){
+                            if (data.success){
+                                this.editedItem = {};
+                                this.loadItems(); //reload items
+                                this.isActiveEditItem = false;
+                            } else {
+                                this.error_message = error_message_start + data.message;
+                            }
+                        }
+                    })
+                    .catch(err => {
+                        this.error_message = error_message_start + err;
+                    });
+            },
+            deleteItem(id_item){
+                if (confirm('Are you sure?')) {
+                    this.error_message = '';
+                    const error_message_start = "Deleting item failed: ";
+                    const delete_url = base_url + "items/" + id_item;
+                    fetch(delete_url, {
+                        method: "DELETE",
+                    })
+                        .then(resp => {
+                            if (resp.ok && resp.status == 200){
+                                return resp.json();
+                            } else {
+                                this.error_message = error_message_start + `${resp.status} (${resp.statusText})`;
+                            }
+                        })
+                        .then(data => {
+                            if (data){
+                                if (data.success){
+                                    this.loadItems(); //reload items
+                                } else {
+                                    this.error_message = error_message_start + data.message;
+                                }
+                            }
+                        })
+                        .catch(err => {
+                            this.error_message = error_message_start + err;
+                        });
+                }
+            }
+        }
+    }
+</script>
