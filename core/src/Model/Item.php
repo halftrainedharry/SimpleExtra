@@ -15,8 +15,8 @@ use xPDO\xPDO;
 class Item extends \xPDO\Om\xPDOSimpleObject
 {
     public function save($cacheFlag = null) {
-        // Set the field 'position', if it's not set yet
-        if (empty($this->position)) {
+        // Set the field 'position', if it's not set yet and it's a new object
+        if (empty($this->position) && $this->isNew()) {
             $stmt = $this->xpdo->query("SELECT MAX(`position`) FROM {$this->xpdo->getTableName(self::class)}");
             $maxPosition = $stmt->fetchColumn();
 

@@ -88,6 +88,9 @@ Ext.extend(SimpleExtra.grid.Items, MODx.grid.Grid, {
             }
         });
     },
+    getDragDropText: function(){
+        return this.selModel.selections.items[0].data.name;
+    },
     search: function(tf, nv, ov)
     {
         var s = this.getStore();
