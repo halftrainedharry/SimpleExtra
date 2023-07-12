@@ -21,6 +21,7 @@ class SimpleExtraHomeManagerController extends modManagerController
     public function loadCustomCssJs()
     {
         $jsUrl = $this->modx->getOption('assets_url', null, MODX_ASSETS_URL) . 'components/simpleextra/js/';
+        $this->addJavascript($jsUrl . 'griddraganddrop.js');
         $this->addJavascript($jsUrl . 'simpleextra.js');
         $this->addJavascript($jsUrl . 'items.grid.js');
     }

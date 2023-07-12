@@ -9,6 +9,8 @@ SimpleExtra.grid.Items = function(config) {
         fields: ['id', 'name', 'description'],
         autoHeight: true,
         paging: true,
+        ddGroup: 'mygridDD',
+        enableDragDrop: true,
         remoteSort: true,
         save_action: 'SimpleExtra\\Processors\\Item\\UpdateFromGrid',
         autosave: true,
@@ -16,21 +18,51 @@ SimpleExtra.grid.Items = function(config) {
             {
                 header: 'ID',
                 dataIndex: 'id',
-                sortable: true
+                sortable: false
             },
             {
                 header: 'Name',
                 dataIndex: 'name',
-                sortable: true,
+                sortable: false,
                 editor: { xtype: 'textfield' }
             },
             {
                 header: 'Description',
                 dataIndex: 'description',
-                sortable: true,
+                sortable: false,
                 editor: { xtype: 'textfield' }
             }
         ],
+        listeners: {
+            'render': function(g) {
+                var ddrow = new Ext.ux.dd.GridReorderDropTarget(g, {
+                    copy: false,
+                    listeners: {
+                        'beforerowmove': function(objThis, oldIndex, newIndex, records) {},
+                        'afterrowmove': function(objThis, oldIndex, newIndex, records) {
+                            console.log(objThis);
+                            MODx.Ajax.request({
+                                url: MODx.config.connector_url,
+                                params: {
+                                    action: 'SimpleExtra\\Processors\\Item\\Reorder',
+                                    idItem: records.pop().id,
+                                    oldIndex: oldIndex,
+                                    newIndex: newIndex
+                                },
+                                listeners: {
+                                }
+                            });
+                        },
+                        'beforerowcopy': function(objThis, oldIndex, newIndex, records) {},
+                        'afterrowcopy': function(objThis, oldIndex, newIndex, records) {}
+                    }
+                });
+                Ext.dd.ScrollManager.register(g.getView().getEditorParent());
+            },
+            beforedestroy: function(g) {
+                Ext.dd.ScrollManager.unregister(g.getView().getEditorParent());
+            }
+        },
         tbar: [{
             text: 'Create Item',
             handler: this.createItem,
@@ -46,6 +78,9 @@ SimpleExtra.grid.Items = function(config) {
     SimpleExtra.grid.Items.superclass.constructor.call(this, config);
 };
 Ext.extend(SimpleExtra.grid.Items, MODx.grid.Grid, {
+    getDragDropText: function(){
+        return this.selModel.selections.items[0].data.name;
+    },
     search: function(tf, nv, ov)
     {
         var s = this.getStore();
