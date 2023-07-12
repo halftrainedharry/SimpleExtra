@@ -9,7 +9,7 @@ use xPDO\Om\xPDOQuery;
 class GetList extends GetListProcessor
 {
     public $classKey = Item::class;
-    public $defaultSortField = 'name';
+    public $defaultSortField = 'position';
     public $defaultSortDirection = 'ASC';
     public $objectType = 'simpleextra.item';
 

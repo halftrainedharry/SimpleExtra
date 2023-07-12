@@ -9,6 +9,8 @@ SimpleExtra.grid.Items = function(config) {
         fields: ['id', 'name', 'description'],
         autoHeight: true,
         paging: true,
+        ddGroup: 'mygridDD',
+        enableDragDrop: true,
         remoteSort: true,
         save_action: 'SimpleExtra\\Processors\\Item\\UpdateFromGrid',
         autosave: true,
@@ -16,21 +18,45 @@ SimpleExtra.grid.Items = function(config) {
             {
                 header: 'ID',
                 dataIndex: 'id',
-                sortable: true
+                sortable: false
             },
             {
                 header: 'Name',
                 dataIndex: 'name',
-                sortable: true,
+                sortable: false,
                 editor: { xtype: 'textfield' }
             },
             {
                 header: 'Description',
                 dataIndex: 'description',
-                sortable: true,
+                sortable: false,
                 editor: { xtype: 'textfield' }
             }
         ],
+        listeners: {
+            'render': {
+                scope: this,
+                fn: function(grid) {
+                    new Ext.dd.DropTarget(grid.container, {
+                        ddGroup: 'mygridDD',
+                        copy: false,
+                        notifyDrop: function(dd, e, data) { //dd = thing being dragged, e = event, data = data from dragged source
+                            if (dd.getDragData(e)) {
+                                var targetNode = dd.getDragData(e).selections[0];
+                                var sourceNode = data.selections[0];
+
+                                grid.fireEvent('sort',{
+                                    target: targetNode,
+                                    source: sourceNode,
+                                    event: e,
+                                    dd: dd
+                                });
+                            }
+                        }
+                    });
+                }
+            }
+        },
         tbar: [{
             text: 'Create Item',
             handler: this.createItem,
@@ -44,8 +70,24 @@ SimpleExtra.grid.Items = function(config) {
         }]
     });
     SimpleExtra.grid.Items.superclass.constructor.call(this, config);
+    this.addEvents('sort');
+    this.on('sort', this.onSort, this);
 };
 Ext.extend(SimpleExtra.grid.Items, MODx.grid.Grid, {
+    onSort: function(o) {
+        MODx.Ajax.request({
+            url: MODx.config.connector_url,
+            params: {
+                action: 'SimpleExtra\\Processors\\Item\\Sort',
+                source: o.source.id,
+                target: o.target.id
+            },
+            listeners: {
+                'success': { fn: function() { this.refresh(); }, scope: this},
+                'failure': { fn: function() { this.refresh(); }, scope: this}
+            }
+        });
+    },
     search: function(tf, nv, ov)
     {
         var s = this.getStore();
